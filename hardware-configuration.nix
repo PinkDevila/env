@@ -21,17 +21,17 @@
 #  '';
 
   fileSystems."/" =
-    { device = "/dev/disk/by-uuid/9038158d-ef69-48a9-8234-33c6f070c266";
+    { device = "/dev/disk/by-label/root";
       fsType = "btrfs";
     };
 
   fileSystems."/home" =
-    { device = "/dev/disk/by-uuid/73ff816c-0c3e-4182-b4a2-025c9155a64e";
+    { device = "/dev/disk/by-label/home";
       fsType = "btrfs";
     };
 
   fileSystems."/boot" =
-    { device = "/dev/disk/by-uuid/0234-6585";
+    { device = "/dev/disk/by-label/boot";
       fsType = "vfat";
     };
 
