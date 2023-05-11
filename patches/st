@@ -1,0 +1,344 @@
+diff --git a/config.def.h b/config.def.h
+index 91ab8ca..887f353 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -5,8 +5,8 @@
+  *
+  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
+  */
+-static char *font = "Liberation Mono:pixelsize=12:antialias=true:autohint=true";
+-static int borderpx = 2;
++static char *font = "monospace:size=12:antialias=true:autohint=true";
++static int borderpx = 0;
+ 
+ /*
+  * What program is execed by st depends of these precedence rules:
+@@ -93,35 +93,33 @@ char *termname = "st-256color";
+  */
+ unsigned int tabspaces = 8;
+ 
++/* bg opacity */
++unsigned int alpha = 0xBB;
++
+ /* Terminal colors (16 first used in escape sequence) */
+ static const char *colorname[] = {
+-	/* 8 normal colors */
+-	"black",
+-	"red3",
+-	"green3",
+-	"yellow3",
+-	"blue2",
+-	"magenta3",
+-	"cyan3",
+-	"gray90",
+-
+-	/* 8 bright colors */
+-	"gray50",
+-	"red",
+-	"green",
+-	"yellow",
+-	"#5c5cff",
+-	"magenta",
+-	"cyan",
+-	"white",
+-
+-	[255] = 0,
+-
+-	/* more colors can be added after 255 to use with DefaultXX */
+-	"#cccccc",
+-	"#555555",
+-	"gray90", /* default foreground colour */
+-	"black", /* default background colour */
++  [0] = "#282a2e", /* black   */
++  [1] = "#a54242", /* red     */
++  [2] = "#8c9440", /* green   */
++  [3] = "#de935f", /* yellow  */
++  [4] = "#5f819d", /* blue    */
++  [5] = "#85678f", /* magenta */
++  [6] = "#5e8d87", /* cyan    */
++  [7] = "#707880", /* white   */
++
++  /* 8 bright colors */
++  [8]  = "#373b41", /* black   */
++  [9]  = "#cc6666", /* red     */
++  [10] = "#b5bd68", /* green   */
++  [11] = "#f0c674", /* yellow  */
++  [12] = "#81a2be", /* blue    */
++  [13] = "#b294bb", /* magenta */
++  [14] = "#8abeb7", /* cyan    */
++  [15] = "#c5c8c6", /* white   */
++  [255] = 0,
++
++  "#FFFFFF",
++  "#222222",
+ };
+ 
+ 
+@@ -129,10 +127,10 @@ static const char *colorname[] = {
+  * Default colors (colorname index)
+  * foreground, background, cursor, reverse cursor
+  */
+-unsigned int defaultfg = 258;
+-unsigned int defaultbg = 259;
+-unsigned int defaultcs = 256;
+-static unsigned int defaultrcs = 257;
++unsigned int defaultfg = 257;
++unsigned int defaultbg = 256;
++unsigned int defaultcs = 257;
++static unsigned int defaultrcs = 256;
+ 
+ /*
+  * Default shape of cursor
+@@ -143,6 +141,12 @@ static unsigned int defaultrcs = 257;
+  */
+ static unsigned int cursorshape = 2;
+ 
++/*
++ * Whether to use pixel geometry or cell geometry
++ */
++
++static Geometry geometry = CellGeometry;
++
+ /*
+  * Default columns and rows numbers
+  */
+@@ -150,6 +154,13 @@ static unsigned int cursorshape = 2;
+ static unsigned int cols = 80;
+ static unsigned int rows = 24;
+ 
++/*
++ * Default width and height (including borders!)
++ */
++
++static unsigned int width = 564;
++static unsigned int height = 364;
++
+ /*
+  * Default colour and shape of the mouse cursor
+  */
+diff --git a/config.mk b/config.mk
+index 1e306f8..6497683 100644
+--- a/config.mk
++++ b/config.mk
+@@ -13,10 +13,10 @@ X11LIB = /usr/X11R6/lib
+ PKG_CONFIG = pkg-config
+ 
+ # includes and libs
+-INCS = -I$(X11INC) \
++INCS = -I. -I/usr/include -I${X11INC} \
+        `$(PKG_CONFIG) --cflags fontconfig` \
+        `$(PKG_CONFIG) --cflags freetype2`
+-LIBS = -L$(X11LIB) -lm -lrt -lX11 -lutil -lXft \
++LIBS = -L/usr/lib -lc -L${X11LIB} -lm -lrt -lX11 -lutil -lXft -lXrender\
+        `$(PKG_CONFIG) --libs fontconfig` \
+        `$(PKG_CONFIG) --libs freetype2`
+ 
+diff --git a/x.c b/x.c
+index aa09997..3bdc13f 100644
+--- a/x.c
++++ b/x.c
+@@ -45,11 +45,20 @@ typedef struct {
+ 	signed char appcursor; /* application cursor */
+ } Key;
+ 
++typedef enum {
++	PixelGeometry,
++	CellGeometry
++} Geometry;
++
+ /* X modifiers */
+ #define XK_ANY_MOD    UINT_MAX
+ #define XK_NO_MOD     0
+ #define XK_SWITCH_MOD (1<<13|1<<14)
+ 
++/* alpha */
++#define OPAQUE 0Xff
++#define USE_ARGB (alpha != OPAQUE && opt_embed == NULL)
++
+ /* function definitions used in config.h */
+ static void clipcopy(const Arg *);
+ static void clippaste(const Arg *);
+@@ -105,6 +114,7 @@ typedef struct {
+ 	XSetWindowAttributes attrs;
+ 	int scr;
+ 	int isfixed; /* is fixed geometry? */
++	int depth; /* bit depth */
+ 	int l, t; /* left and top offset */
+ 	int gm; /* geometry mask */
+ } XWindow;
+@@ -752,7 +762,7 @@ xresize(int col, int row)
+ 
+ 	XFreePixmap(xw.dpy, xw.buf);
+ 	xw.buf = XCreatePixmap(xw.dpy, xw.win, win.w, win.h,
+-			DefaultDepth(xw.dpy, xw.scr));
++			xw.depth);
+ 	XftDrawChange(xw.draw, xw.buf);
+ 	xclear(0, 0, win.w, win.h);
+ 
+@@ -812,6 +822,14 @@ xloadcols(void)
+ 			else
+ 				die("could not allocate color %d\n", i);
+ 		}
++
++	/* set alpha value of bg color */
++	if (USE_ARGB) {
++		dc.col[defaultbg].color.alpha = alpha << 8;
++		dc.col[defaultbg].color.red   = ((dc.col[defaultbg].color.red >> 8) * alpha / 255) << 8;
++		dc.col[defaultbg].color.green = ((dc.col[defaultbg].color.green >> 8) * alpha / 255) << 8;
++		dc.col[defaultbg].color.blue  = ((dc.col[defaultbg].color.blue >> 8) * alpha / 255) << 8;
++	}
+ 	loaded = 1;
+ }
+ 
+@@ -845,6 +863,17 @@ xsetcolorname(int x, const char *name)
+ 	return 0;
+ }
+ 
++void
++xtermclear(int col1, int row1, int col2, int row2)
++{
++	XftDrawRect(xw.draw,
++			&dc.col[IS_SET(MODE_REVERSE) ? defaultfg : defaultbg],
++			borderpx + col1 * win.cw,
++			borderpx + row1 * win.ch,
++			(col2-col1+1) * win.cw,
++			(row2-row1+1) * win.ch);
++}
++
+ /*
+  * Absolute coordinates.
+  */
+@@ -1127,7 +1156,7 @@ xicdestroy(XIC xim, XPointer client, XPointer call)
+ }
+ 
+ void
+-xinit(int cols, int rows)
++xinit(int w, int h)
+ {
+ 	XGCValues gcvalues;
+ 	Cursor cursor;
+@@ -1138,7 +1167,40 @@ xinit(int cols, int rows)
+ 	if (!(xw.dpy = XOpenDisplay(NULL)))
+ 		die("can't open display\n");
+ 	xw.scr = XDefaultScreen(xw.dpy);
+-	xw.vis = XDefaultVisual(xw.dpy, xw.scr);
++	xw.depth = (USE_ARGB) ? 32: XDefaultDepth(xw.dpy, xw.scr);
++	if (!USE_ARGB)
++		xw.vis = XDefaultVisual(xw.dpy, xw.scr);
++	else {
++		XVisualInfo *vis;
++		XRenderPictFormat *fmt;
++		int nvi;
++		int i;
++
++		XVisualInfo tpl = {
++			.screen = xw.scr,
++			.depth = 32,
++			.class = TrueColor
++		};
++
++		vis = XGetVisualInfo(xw.dpy,
++				VisualScreenMask | VisualDepthMask | VisualClassMask,
++				&tpl, &nvi);
++		xw.vis = NULL;
++		for (i = 0; i < nvi; i++) {
++			fmt = XRenderFindVisualFormat(xw.dpy, vis[i].visual);
++			if (fmt->type == PictTypeDirect && fmt->direct.alphaMask) {
++				xw.vis = vis[i].visual;
++				break;
++			}
++		}
++
++		XFree(vis);
++
++		if (!xw.vis) {
++			fprintf(stderr, "Couldn't find ARGB visual.\n");
++			exit(1);
++		}
++	}
+ 
+ 	/* font */
+ 	if (!FcInit())
+@@ -1148,12 +1210,24 @@ xinit(int cols, int rows)
+ 	xloadfonts(usedfont, 0);
+ 
+ 	/* colors */
+-	xw.cmap = XDefaultColormap(xw.dpy, xw.scr);
++	if (!USE_ARGB)
++		xw.cmap = XDefaultColormap(xw.dpy, xw.scr);
++	else
++		xw.cmap = XCreateColormap(xw.dpy, XRootWindow(xw.dpy, xw.scr),
++				xw.vis, None);
+ 	xloadcols();
+ 
+ 	/* adjust fixed window geometry */
+-	win.w = 2 * borderpx + cols * win.cw;
+-	win.h = 2 * borderpx + rows * win.ch;
++	switch (geometry) {
++	case CellGeometry:
++		win.w = 2 * borderpx + w * win.cw;
++		win.h = 2 * borderpx + h * win.ch;
++		break;
++	case PixelGeometry:
++		win.w = w;
++		win.h = h;
++		break;
++	}
+ 	if (xw.gm & XNegative)
+ 		xw.l += DisplayWidth(xw.dpy, xw.scr) - win.w - 2;
+ 	if (xw.gm & YNegative)
+@@ -1171,16 +1245,15 @@ xinit(int cols, int rows)
+ 	if (!(opt_embed && (parent = strtol(opt_embed, NULL, 0))))
+ 		parent = XRootWindow(xw.dpy, xw.scr);
+ 	xw.win = XCreateWindow(xw.dpy, parent, xw.l, xw.t,
+-			win.w, win.h, 0, XDefaultDepth(xw.dpy, xw.scr), InputOutput,
++			win.w, win.h, 0, xw.depth, InputOutput,
+ 			xw.vis, CWBackPixel | CWBorderPixel | CWBitGravity
+ 			| CWEventMask | CWColormap, &xw.attrs);
+ 
+ 	memset(&gcvalues, 0, sizeof(gcvalues));
+ 	gcvalues.graphics_exposures = False;
+-	dc.gc = XCreateGC(xw.dpy, parent, GCGraphicsExposures,
+-			&gcvalues);
+-	xw.buf = XCreatePixmap(xw.dpy, xw.win, win.w, win.h,
+-			DefaultDepth(xw.dpy, xw.scr));
++	xw.buf = XCreatePixmap(xw.dpy, xw.win, win.w, win.h, xw.depth);
++	dc.gc = XCreateGC(xw.dpy, (USE_ARGB) ? xw.buf: parent,
++			GCGraphicsExposures, &gcvalues);
+ 	XSetForeground(xw.dpy, dc.gc, dc.col[defaultbg].pixel);
+ 	XFillRectangle(xw.dpy, xw.buf, dc.gc, 0, 0, win.w, win.h);
+ 
+@@ -2051,6 +2124,12 @@ main(int argc, char *argv[])
+ 	case 'g':
+ 		xw.gm = XParseGeometry(EARGF(usage()),
+ 				&xw.l, &xw.t, &cols, &rows);
++		geometry = CellGeometry;
++		break;
++	case 'G':
++		xw.gm = XParseGeometry(EARGF(usage()),
++				&xw.l, &xw.t, &width, &height);
++		geometry = PixelGeometry;
+ 		break;
+ 	case 'i':
+ 		xw.isfixed = 1;
+@@ -2087,10 +2166,19 @@ run:
+ 
+ 	setlocale(LC_CTYPE, "");
+ 	XSetLocaleModifiers("");
++	switch (geometry) {
++	case CellGeometry:
++		xinit(cols, rows);
++		break;
++	case PixelGeometry:
++		xinit(width, height);
++		cols = (win.w - 2 * borderpx) / win.cw;
++		rows = (win.h - 2 * borderpx) / win.ch;
++		break;
++	}
+ 	cols = MAX(cols, 1);
+ 	rows = MAX(rows, 1);
+ 	tnew(cols, rows);
+-	xinit(cols, rows);
+ 	xsetenv();
+ 	selinit();
+ 	run();

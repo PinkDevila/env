@@ -1,16 +1,16 @@
 { config, pkgs, ... }:
+let
+  ime = "fcitx5";
+in
 {
   imports = [
-    ./modules/alacritty.nix
-    ./modules/bash.nix
-    ./modules/bspwm.nix
+    ./modules/chromium.nix
     ./modules/dunst.nix
-    ./modules/fish.nix
+    ./modules/firefox.nix
     ./modules/git.nix
     ./modules/gtk.nix
-    ./modules/i3.nix
-    ./modules/kitty.nix
     ./modules/mpv.nix
+    ./modules/qt.nix
     ./modules/qutebrowser.nix
     ./modules/scripts.nix
     ./modules/sway.nix
@@ -23,26 +23,18 @@
   home.username = "sera";
   home.homeDirectory = "/home/sera";
   home.sessionVariables = {
-      XDG_CURRENT_DESKTOP = "sway"; 
-      GTK_IM_MODULE       = "fcitx";
-      GLFW_IM_MODULE      = "fcitx";
-      QT_IM_MODULE        = "fcitx";
+     XDG_CURRENT_DESKTOP = "sway";
+      GTK_IM_MODULE       = "${ime}";
+      GLFW_IM_MODULE      = "${ime}";
+      QT_IM_MODULE        = "${ime}";
+      AMD_VULKAN_ICD      = "RADV";
       EDITOR              = "vim";
-      MOZ_ENABLE_WAYLAND  = 1;
-      XMODIFIERS          = "@im=fcitx";
+      QT_STYLE_OVERRIDE   = "gtk2";
+      XMODIFIERS          = "@im=${ime}";
+      NIXPKGS_ALLOW_UNFREE= 1;
+      GOPATH              = "$HOME/Source/go";
+      MEDNAFEN_HOME       = "$HOME/.config/mednafen";
     };
-  nixpkgs.overlays = [
-    (self: super: {
-      st = super.st.overrideAttrs(_:{
-        patches = [ ./patch.patch
-          (super.fetchpatch{
-            url = "https://st.suckless.org/patches/nordtheme/st-nordtheme-0.8.5.diff";
-            sha256 = "";
-          })
-        ];
-      });
-    })
-  ];
   home.stateVersion = "22.05";
 
   programs.home-manager.enable = true;

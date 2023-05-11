@@ -1,30 +1,27 @@
-{pkg, config, ...}:{
+{config, pkgs, ...}:{
   programs.waybar = {
     enable = true;
     settings = {
-      mainBar = {
+      bar = {
         layer = "top";
-        position = "bottom";
-        #height = 16;
-        modules-left = [
-          "sway/workspaces" 
-        ];
-        modules-center = [
-          "clock"
-        ];
-        modules-right = [
-          "tray"
-        ];
+        position = "top";
+
+        modules-left = ["sway/workspaces"];
+        modules-center = ["clock"];
+        modules-right = ["tray"];
       };
     };
     style = ''
-      *{
-        font-family: 'Fira Code';
-        font-size: 12;
-        padding: 1px 2px;
-        margin: 0;
+      * {
+        padding: 0px 0px;
+        margin: 0px;
       }
-    '';
 
+      #workspaces button {
+        margin: 0px;
+        padding: 0px 4px;
+        border-radius: 0px;
+      } 
+    '';
   };
 }

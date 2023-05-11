@@ -1,67 +1,99 @@
 {pkgs, config, ...}:
 let
-    mod = "Mod4";
-    alt = "Mod1";
-    terminal = "${pkgs.kitty}/bin/kitty";
-    menu = "${pkgs.bemenu}/bin/bemenu-run -c -W 0.5 -l 5 -p '' -n";
+  workspaces = {
+    ws1 = "1";
+    ws2 = "2";
+    ws3 = "3";
+    ws4 = "4";
+    ws5 = "5";
+    ws6 = "6";
+    ws7 = "7";
+    ws8 = "8";
+    ws9 = "9";
+    ws10 = "10";
+  };
+  mod = "Mod4";
+  alt = "Mod4";
+  terminal = "${pkgs.st}/bin/st";
+  menu = "menu";
 in{
   wayland.windowManager.sway = {
     enable = true;
     xwayland = true;
     wrapperFeatures.gtk = true ;
     config = {
-      modifier = "Mod4";
-      defaultWorkspace = "1";
+      modifier = "${mod}";
       fonts = {
-        names = ["Fira Code" "Fira Code Retina"];
+        names = ["monospace"];
         style = "";
-        size = 0.0;
+        size = 12.0;
       };
+      bars = [];
+      defaultWorkspace = "worspace number 1";
       window = {
         border = 0;
       };
-      bars = [];
+      colors = {
+        focused = {
+          background = "#FFFFFF";
+          border = "#FFFFFF";
+          childBorder = "#FFFFFF";
+          indicator = "#FF0000";
+          text = "#222222";
+        };
+        unfocused = {
+          background = "#222222";
+          border = "#222222";
+          childBorder = "#222222";
+          indicator = "#FF0000";
+          text = "#FFFFFF";
+        };
+      };
       output = {
         "*" = {
-          bg = "~/.config/wall.jpg fill";
+          bg = "~/.config/wall.png fill";
           scale = "1.0";
         };
       };
       input = { 
         "*" = { 
-          repeat_delay="200";
-          repeat_rate="60";
+          repeat_delay="150";
+          natural_scroll = "enabled";
+          repeat_rate = "60";
+          xkb_layout = "us,us(colemak)";
+          #accel_profile = "flat";
+          xkb_options = "ctrl:nocaps";
         };
       };
       keybindings = {
         #general apps
-        "${mod}+Shift+s" = "exec ${pkgs.grim}/bin/grim -g \"$(${pkgs.slurp}/bin/slurp)\" -| ${pkgs.wl-clipboard}/bin/wl-copy -t image/png";
-        "${mod}+Print" = "exec ${pkgs.grim}/bin/grim -| ${pkgs.wl-clipboard}/bin/wl-copy -t image/png";
-        "${mod}+Shift+Print" = "exec record";
-        "${mod}+Return" = "exec ${terminal}";
-        "${mod}+x" = "exec ${menu}";
+        "${alt}+s" = "exec screenshot";
+        "Print" = "exec ${pkgs.grim}/bin/grim -| ${pkgs.wl-clipboard}/bin/wl-copy -t image/png";
+        "${alt}+Shift+s" = "exec record";
+        "${alt}+Return" = "exec ${terminal}";
+        "${alt}+x" = "exec ${menu}";
 
         #window management
-        "${mod}+h" = "focus left";
-        "${mod}+l" = "focus right";
-        "${mod}+k" = "focus up";
-        "${mod}+j" = "focus down";
+        "${mod}+j" = "focus left";
+        "${mod}+k" = "focus right";
+        "${mod}+l" = "focus up";
+        "${mod}+h" = "focus down";
         "${mod}+Shift+h" = "move left";
         "${mod}+Shift+l" = "move right";
         "${mod}+Shift+k" = "move up";
         "${mod}+Shift+j" = "move down";
 
         #workspace shit
-        "${mod}+1" = "workspace 1";
-        "${mod}+2" = "workspace 2";
-        "${mod}+3" = "workspace 3";
-        "${mod}+4" = "workspace 4";
-        "${mod}+5" = "workspace 5";
-        "${mod}+6" = "workspace 6";
-        "${mod}+7" = "workspace 7";
-        "${mod}+8" = "workspace 8";
-        "${mod}+9" = "workspace 9";
-        "${mod}+0" = "workspace 10";
+        "${mod}+1" = "workspace ${workspaces.ws1}";
+        "${mod}+2" = "workspace ${workspaces.ws2}";
+        "${mod}+3" = "workspace ${workspaces.ws3}";
+        "${mod}+4" = "workspace ${workspaces.ws4}";
+        "${mod}+5" = "workspace ${workspaces.ws5}";
+        "${mod}+6" = "workspace ${workspaces.ws6}";
+        "${mod}+7" = "workspace ${workspaces.ws7}";
+        "${mod}+8" = "workspace ${workspaces.ws8}";
+        "${mod}+9" = "workspace ${workspaces.ws9}";
+        "${mod}+0" = "workspace ${workspaces.ws10}";
         "${mod}+Shift+1" = "move container to workspace 1";
         "${mod}+Shift+2" = "move container to workspace 2";
         "${mod}+Shift+3" = "move container to workspace 3";
@@ -74,19 +106,22 @@ in{
         "${mod}+Shift+0" = "move container to workspace 10";
 
         "${mod}+Shift+space" = "floating toggle";
+        "${mod}+f" = "fullscreen toggle";
         "${mod}+space" = "focus mode_toggle";
-        "${mod}+q" = "kill";
+        "${mod}+Shift+c" = "kill";
 
-        "${mod}+p" = "exec dunstify $(shuf ~/.jp|awk '{print $2}'|head -n1)";
+        "${mod}+b" = "exec pkill -SIGUSR1 waybar";
 
-        "${mod}+s" = "layout stacking";
-        "${alt}+t" = "exec dunstify \"$(date \"+%T\")\"";
+        "${mod}+t" = "layout tabbed";
+        "${alt}+p" = "exec dunstify \"$(date \"+%T\")\"";
 
       };
       startup = [
         { command = "exec systemctl --user import-environment";}
         { command = "exec fcitx5 -d";}
-        { command = "exec kitty -e tmux";}
+        { command = "exec waybar";}
+        { command = "exec swaymsg workspace 1";}
+        { command = "exec ${pkgs.swayidle}/bin/swayidle -w timeout 300 'swaymsg \"output * dpms off\"' resume 'swaymsg \"output * dpms on\"'";}
       ];
     };
     extraConfig = ''

@@ -6,33 +6,25 @@
 
     settings = {
       global = {
-        color = "#CDD6F4";
-        frame_color = "#1E1E2E";
-        separator_color = "#1E1E2E";
-        font = "Fira Code 13";
+        color = "#657B83";
+        frame_color = "#657B83";
+        separator_color = "#657B83";
+        font = "monospace 12";
         alignment = "center";
       };
-  
-      shortcuts = {
-        close = "ctrl+space";
-        close_all = "ctrl+shift+space";
-        history = "ctrl+grave";
-        context = "ctrl+shift+period";
-      };
-  
       urgency_low = {
-        background = "#1E1E2E";
-        foreground = "#CDD6F4";
+        background = "#FDF6E3";
+        foreground = "#657B83";
         timeout = 10;
       };
       urgency_normal = {
-        background = "#1E1E2E";
-        foreground = "#CDD6F4";
+        background = "#FDF6E3";
+        foreground = "#657B83";
         timeout = 10;
       };
       urgency_critical = {
-        background = "#1E1E2E";
-        foreground = "#CDD6F4";
+        background = "#fdf6e3";
+        foreground = "#657B83";
         timeout = 10;
       };
     };

@@ -1,5 +1,5 @@
 {config, pkgs, ...}:{
-  programs.emacs = {
+  programs.firefox = {
     enable = true;
-  }
+  };
 }

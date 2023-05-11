@@ -8,35 +8,38 @@
     tmpOnTmpfs = true;
     tmpOnTmpfsSize = "90%";
     cleanTmpDir = true;
-    kernelPackages = pkgs.linuxPackages_xanmod_latest;
+    kernelPackages = pkgs.linuxPackages_zen;
     kernelParams = [
-      "amd_iommu=on"
-      "iommu=pt"
-      "pcie_aspm=off" 
-      "pcie_acs_override=downstream,multifunction"
+      "nvidia-drm.modeset=1" 
     ];
     blacklistedKernelModules = [
-      "nvidia" "nouveau"
     ];
-    kernelModules = [
-      "vfio_virqfd" "vfio_pci" "vfio_iommu_type1" "vfio"
-    ];
-    extraModprobeConfig = "options vfio-pci ids=10de:1c82,10de:0fb9";
+    extraModprobeConfig = "";
+    kernel = {
+      sysctl = {
+        "vm.max_map_count" = 2147483642;
+      };
+    };
     loader = {
-      systemd-boot.enable = true;
+      systemd-boot = {
+        enable = true;
+        configurationLimit = 6;
+        consoleMode =  "max";
+      };
       efi.canTouchEfiVariables = true;
     };
   };
   
 
   nix = {
-    package = pkgs.nixFlakes; # or versioned attributes like nix_2_7
+    package = pkgs.nixVersions.stable;
     extraOptions = ''
       experimental-features = nix-command flakes
     '';
-    autoOptimiseStore = true;
+    settings.auto-optimise-store = true;
   };
-  networking.hostName = "PinkDevil"; # Define your hostname.
+  networking.enableIPv6 = false;
+  networking.hostName = "pinkdevil";
   networking.firewall.enable = false;
 
   time.timeZone = "Europe/Belgrade";
@@ -50,45 +53,60 @@
   };
 
   programs.dconf.enable = true;
-  services.xserver = {
-    enable = true;
-    displayManager.startx.enable = true;
-  };
-  environment.gnome = {
-    excludePackages = with pkgs;[];
+  programs.cdemu.enable = true;
+
+  environment = {
+    binsh = "${pkgs.dash}/bin/dash";
   };
 
+  services.xserver = {
+    enable = true;
+    videoDrivers = [ "nvidia" ];
+    libinput = {
+      enable = true;
+      mouse = {
+        naturalScrolling = true;
+      };
+    };
+  };
+  security.polkit.enable = true;
+  services.dbus.enable = true;
+  xdg.portal = {
+    enable = true;
+    wlr.enable = true;
+    extraPortals = with pkgs;[xdg-desktop-portal-gtk];
+  };
   hardware = {
+    nvidia = {
+      prime = {
+        sync.enable = true;
+        nvidiaBusId = "PCI:26:0:0";
+        amdgpuBusId = "PCI:25:0:0";
+      };
+      modesetting.enable = true;
+    };
     pulseaudio.enable = false;
     opengl = {
       enable = true;
       driSupport = true;
       driSupport32Bit = true;
-    };
+      extraPackages = with pkgs; [
+        vaapiVdpau
+        libvdpau-va-gl
+      ];
+      extraPackages32 = with pkgs; [
+      ];
   };
-
-  services.zerotierone = {
-    enable = true;
   };
   services.greetd = {
     enable = true;
     settings = {
       default_session = {
-        command = "${pkgs.greetd.tuigreet}/bin/tuigreet -r --time --cmd sway";
-        user = "greeter";
+        command = "${pkgs.greetd.tuigreet}/bin/tuigreet -c 'startw'";
+        user = "sera";
       };
     };
   };
-  xdg.portal = {
-    enable = true;
-    gtkUsePortal = true;
-    extraPortals = with pkgs; [
-      xdg-desktop-portal-wlr
-      xdg-desktop-portal-gtk
-    ];
-    wlr.enable = true;
-  };
-
   sound.enable = false;
   security.rtkit.enable = true;
   services.pipewire = {
@@ -100,7 +118,8 @@
 
   users.users.sera = {
     isNormalUser = true;
-    extraGroups = [ "kvm" "audio" "wheel" "libvirtd" ];
+    extraGroups = [ "cdrom" "kvm" "audio" "wheel" ];
+    shell = pkgs.mksh;
   };
   nixpkgs = {
     config= {
@@ -112,49 +131,68 @@
     enableDefaultFonts = true;
     fonts = with pkgs; [
       noto-fonts
+      font-awesome
       noto-fonts-cjk
       noto-fonts-emoji
       liberation_ttf
+      jetbrains-mono
       inconsolata
-      fira-code
-      fira-code-symbols
+      migu
+      ipafont
+      kochi-substitute
+
     ];
     fontconfig = {
       defaultFonts = {
-        monospace = [ "Fira Code" ];
-        emoji = [ "Noto Color Emoji" ];
+        monospace = [
+          "JetBrains Mono"
+          "IPAGothic"
+          "Noto Sans Mono CJK KR"
+          "Noto Sans Mono CJK JP"
+          "Font Awesome 6 Free" 
+        ];
+        sansSerif = [
+          "JetBrains Mono"
+          "IPAGothic"
+          "Noto Sans Mono CJK KR"
+          "Noto Sans Mono CJK JP"
+          "Font Awesome 6 Free" 
+        ];
+        serif = [
+          "JetBrains Mono"
+          "IPAPMincho"
+          "Noto Sans Mono CJK KR"
+          "Noto Sans Mono CJK JP"
+          "Font Awesome 6 Free" 
+        ];
+        emoji = [
+          "Font Awesome 6 Free" 
+          "Noto Color Emoji"
+        ];
       };
   };
   };
-  
-  virtualisation.libvirtd = {
-    enable = true;
-    qemu = {
-      ovmf.enable = true; runAsRoot = true;
-    };
-    onBoot = "ignore";
-    onShutdown = "shutdown";
-  };
+
+  networking.firewall.allowedTCPPorts = [ 80 443 ];
+
   services.sshd.enable = true;
-  systemd = {
-    tmpfiles = {
-      rules = [
-        #"f /dev/shm/looking-glass 0660 sera libvirtd -"
-      ];
-    };
-    services = {
-      create-swapfile = {
-        serviceConfig.Type = "oneshot";
-        wantedBy = [ "swap-swapfile.swap" ];
-        script = ''
-          ${pkgs.coreutils}/bin/truncate -s 0 /swapfile
-          ${pkgs.e2fsprogs}/bin/chattr +C /swapfile
-          ${pkgs.btrfs-progs}/bin/btrfs property set /swapfile compression none
-        '';
-      };
+    virtualisation = {
+    podman = {
+      enable = true;
+      dockerCompat = true;
+      defaultNetwork.settings.dns_enabled = true;
+      extraPackages = with pkgs;[podman-compose];
     };
   };
+
+#  systemd = {
+#    tmpfiles = {
+#      rules = [
+#        "f /dev/shm/looking-glass 0660 sera libvirtd -"
+#      ];
+#    };
+#    services = {
+#    };
+#  };
   system.stateVersion = "22.05";
-
 }
-

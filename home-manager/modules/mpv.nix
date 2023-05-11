@@ -2,7 +2,7 @@
   programs.mpv = {
     enable = true;
     config = {
-      volume = 40;
+      volume = 80;
       save-position-on-quit = true;
       hwdec = "vaapi";
       profile = "gpu-hq";

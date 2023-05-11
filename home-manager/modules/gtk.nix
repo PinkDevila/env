@@ -2,8 +2,9 @@
   gtk = {
     enable = true;
     theme = {
-      package = pkgs.catppuccin-gtk;
-      name = "Catppuccin-red-dark";
+      package = pkgs.numix-solarized-gtk-theme;
+      #package = pkgs.whitesur-gtk-theme;
+      name = "NumixSolarizedLightRed";
   };
   iconTheme = {
     package = pkgs.gruvbox-dark-icons-gtk;

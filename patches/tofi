@@ -1,0 +1,65 @@
+diff --git a/src/input.c b/src/input.c
+index be65e24..f3937c2 100644
+--- a/src/input.c
++++ b/src/input.c
+@@ -39,7 +39,7 @@ void input_handle_keypress(struct tofi *tofi, xkb_keycode_t keycode)
+ 			keycode);
+ 	if (utf32_isprint(ch)) {
+ 		add_character(tofi, keycode);
+-	} else if ((sym == XKB_KEY_BackSpace || key == KEY_W)
++	}else if ((sym == XKB_KEY_BackSpace || key == KEY_W)
+ 			&& xkb_state_mod_name_is_active(
+ 				tofi->xkb_state,
+ 				XKB_MOD_NAME_CTRL,
+diff --git a/src/main.c b/src/main.c
+index d874745..16e1cd2 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -1155,7 +1155,7 @@ int main(int argc, char *argv[])
+ 			| ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT
+ 			| ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT,
+ 		.use_history = true,
+-		.require_match = true,
++		.require_match = false,
+ 		.use_scale = true,
+ 	};
+ 	wl_list_init(&tofi.output_list);
+diff --git a/src/xmalloc.c b/src/xmalloc.c
+index 9850805..3ee627c 100644
+--- a/src/xmalloc.c
++++ b/src/xmalloc.c
+@@ -12,7 +12,7 @@ void *xmalloc(size_t size)
+ 		return ptr;
+ 	} else {
+ 		log_error("Out of memory, exiting.\n");
+-		exit(EXIT_FAILURE);
++    //exit(EXIT_FAILURE);
+ 	}
+ }
+ 
+@@ -25,7 +25,7 @@ void *xcalloc(size_t nmemb, size_t size)
+ 		return ptr;
+ 	} else {
+ 		log_error("Out of memory, exiting.\n");
+-		exit(EXIT_FAILURE);
++		//exit(EXIT_FAILURE);
+ 	}
+ }
+ 
+@@ -38,7 +38,7 @@ void *xrealloc(void *ptr, size_t size)
+ 		return ptr;
+ 	} else {
+ 		log_error("Out of memory, exiting.\n");
+-		exit(EXIT_FAILURE);
++		//exit(EXIT_FAILURE);
+ 	}
+ }
+ 
+@@ -50,6 +50,6 @@ char *xstrdup(const char *s)
+ 		return ptr;
+ 	} else {
+ 		log_error("Out of memory, exiting.\n");
+-		exit(EXIT_FAILURE);
++		//exit(EXIT_FAILURE);
+ 	}
+ }
