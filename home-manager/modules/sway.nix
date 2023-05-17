@@ -13,7 +13,6 @@ let
     ws10 = "10";
   };
   mod = "Mod4";
-  alt = "Mod4";
   terminal = "${pkgs.st}/bin/st";
   menu = "menu";
 in{
@@ -67,11 +66,11 @@ in{
       };
       keybindings = {
         #general apps
-        "${alt}+s" = "exec screenshot";
+        "${mod}+s" = "exec screenshot";
         "Print" = "exec ${pkgs.grim}/bin/grim -| ${pkgs.wl-clipboard}/bin/wl-copy -t image/png";
-        "${alt}+Shift+s" = "exec record";
-        "${alt}+Return" = "exec ${terminal}";
-        "${alt}+x" = "exec ${menu}";
+        "${mod}+Shift+s" = "exec record";
+        "${mod}+Return" = "exec ${terminal}";
+        "${mod}+x" = "exec ${menu}";
 
         #window management
         "${mod}+j" = "focus left";
@@ -113,7 +112,7 @@ in{
         "${mod}+b" = "exec pkill -SIGUSR1 waybar";
 
         "${mod}+t" = "layout tabbed";
-        "${alt}+p" = "exec dunstify \"$(date \"+%T\")\"";
+        "${mod}+p" = "exec dunstify \"$(date \"+%T\")\"";
 
       };
       startup = [

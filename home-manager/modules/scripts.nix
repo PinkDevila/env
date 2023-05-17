@@ -46,11 +46,10 @@
   proton = pkgs.writeScriptBin "proton" ''
     #!/usr/bin/env sh
 
-    GAMES=$HOME/Games
-    PROTON="${pkgs.steam-run}/bin/steam-run ${pkgs.python3}/bin/python3 $GAMES/proton/proton run"
+    GAMES=$HOME/gaems
+    export WINEPREFIX=$GAMES/prefix
+    PROTON="${pkgs.steam-run}/bin/steam-run $GAMES/proton/bin/wine"
     EXE="$@"
-    export STEAM_COMPAT_DATA_PATH=$GAMES/prefix
-    export STEAM_COMPAT_CLIENT_INSTALL_PATH="$HOME/.steam/"
 
     $PROTON $EXE
   '';
@@ -62,9 +61,9 @@
   protonserver = pkgs.writeScriptBin "protonserver" ''
     #!/usr/bin/env sh
 
-    BIN=$HOME/Games/proton/files/bin/
+    BIN=$HOME/Games/proton/bin
 
-    export WINEPREFIX=$HOME/Games/prefix/pfx
+    export WINEPREFIX=$HOME/Games/prefix
     export WINE=$BIN/wine
 
     PROTON="${pkgs.steam-run}/bin/steam-run $BIN/wineserver -k"

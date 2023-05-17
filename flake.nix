@@ -12,10 +12,6 @@
     nixpkgs-wayland  = { 
       url = "github:nix-community/nixpkgs-wayland";
     };
-    hyprland = {
-      url = "github:hyprwm/Hyprland";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
@@ -23,7 +19,6 @@
     , self
     , nixpkgs
     , home-manager
-    , hyprland
   }: 
   let
     system = "x86_64-linux";
@@ -39,7 +34,6 @@
         inherit system;
         modules = [
           ./configuration.nix
-            hyprland.nixosModules.default {programs.hyprland.enable = true;}
           home-manager.nixosModules.home-manager {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
@@ -48,9 +42,7 @@
               nixpkgs-wayland.overlay
               (final: prev: { 
                 bemenu = prev.bemenu.overrideAttrs (old: {
-                  patches = [ 
-                    ./patches/bemenu
-                  ];
+                  patches = [./patches/bemenu];
                 });
                 st = prev.st.overrideAttrs (old: {
                   src = prev.fetchgit {
@@ -68,9 +60,7 @@
                     rev = "574eff0df1aff9bdc6d32939a03312cc08803de3";
                     sha256 = "sha256-lmG6cES210WxqhzN8nDS0+IJ6LSNXt3f8lqQdwC7Izw=";
                   };
-                  patches = [ 
-                    ./patches/tofi
-                  ];
+                  patches = [./patches/tofi];
                 });
               })
             ];
